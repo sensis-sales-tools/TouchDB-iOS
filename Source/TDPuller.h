@@ -16,7 +16,6 @@
 {
     @private
     TDChangeTracker* _changeTracker;
-    NSString* _endingSequence;
     TDSequenceMap* _pendingSequences;
     NSMutableArray* _revsToPull;
     NSMutableArray* _deletedRevsToPull;
@@ -33,11 +32,10 @@
 @interface TDPulledRevision : TDRevision
 {
 @private
-    NSString* _remoteSequenceID;
     bool _conflicted;
 }
 
-@property (copy) NSString* remoteSequenceID;
+@property (nonatomic) NSUInteger remoteSequenceID;
 @property bool conflicted;
 
 @end

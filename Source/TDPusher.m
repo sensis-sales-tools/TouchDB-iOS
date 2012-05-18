@@ -81,8 +81,9 @@ static int findCommonAncestor(TDRevision* rev, NSArray* possibleIDs);
     TDChangesOptions options = kDefaultTDChangesOptions;
     options.includeConflicts = YES;
     // Process existing changes since the last push:
-    TDRevisionList* changes = [_db changesSinceSequence: [_lastSequence longLongValue] 
-                                                options: &options filter: filter];
+    TDRevisionList* changes = [_db changesSinceSequence: self.changeSequenceIdStart 
+                                                options: &options 
+                                                 filter: filter];
     if (changes.count > 0)
         [self processInbox: changes];
     
@@ -218,7 +219,7 @@ static int findCommonAncestor(TDRevision* rev, NSArray* possibleIDs);
                              self.error = error;
                          } else {
                              LogTo(SyncVerbose, @"%@: Sent %@", self, changes.allRevisions);
-                             self.lastSequence = $sprintf(@"%lld", lastInboxSequence);
+                             _changeSequenceIdStart = lastInboxSequence;
                          }
                          self.changesProcessed += numDocsToSend;
                          [self asyncTasksFinished: 1];
@@ -228,7 +229,7 @@ static int findCommonAncestor(TDRevision* rev, NSArray* possibleIDs);
             
         } else {
             // If none of the revisions are new to the remote, just bump the lastSequence:
-            self.lastSequence = $sprintf(@"%lld", [changes.allRevisions.lastObject sequence]);
+            _changeSequenceIdStart = [changes.allRevisions.lastObject sequence];
         }
         [self asyncTasksFinished: 1];
     }];
@@ -275,7 +276,7 @@ static int findCommonAncestor(TDRevision* rev, NSArray* possibleIDs);
                       self.error = error;
                   } else {
                       LogTo(SyncVerbose, @"%@: Sent %@, response=%@", self, rev, response);
-                      self.lastSequence = $sprintf(@"%lld", rev.sequence);
+                      _changeSequenceIdStart = rev.sequence;
                   }
                   self.changesProcessed++;
                   [self asyncTasksFinished: 1];

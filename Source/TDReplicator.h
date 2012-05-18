@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "TDRevision.h"
 
 @class TDDatabase, TDRevisionList, TDBatcher, TDReachability;
 @protocol TDAuthorizer;
@@ -29,7 +30,6 @@ extern NSString* TDReplicatorStoppedNotification;
     BOOL _continuous;
     NSString* _filterName;
     NSDictionary* _filterParameters;
-    NSString* _lastSequence;
     BOOL _lastSequenceChanged;
     NSDictionary* _remoteCheckpoint;
     BOOL _savingCheckpoint, _overdueForSave;
@@ -42,6 +42,9 @@ extern NSString* TDReplicatorStoppedNotification;
     CFAbsoluteTime _startTime;
     id<TDAuthorizer> _authorizer;
     NSDictionary* _options;
+    SequenceNumber _changeSequenceIdStart;
+    SequenceNumber _changeSequenceIdEnd;
+    SequenceNumber _changeSequenceIdCurrent;
 }
 
 - (id) initWithDB: (TDDatabase*)db
@@ -95,6 +98,11 @@ extern NSString* TDReplicatorStoppedNotification;
 /** Approximate total number of changes to transfer.
     This is only an estimate and its value will change during replication. It starts at zero and returns to zero when replication stops. */
 @property (readonly, nonatomic) NSUInteger changesTotal;
+
+/** The sequnce numbers of the changes we are replicating. */
+@property (readonly, nonatomic) SequenceNumber changeSequenceIdStart;
+@property (readonly, nonatomic) SequenceNumber changeSequenceIdEnd;
+@property (readonly, nonatomic) SequenceNumber changeSequenceIdCurrent;
 
 @end
 

@@ -34,6 +34,6 @@
 - (SequenceNumber) checkpointedSequence;
 
 /** Returns the value associated with the checkpointedSequence. */
-- (id) checkpointedValue;
+- (NSUInteger) checkpointedValue;
 
 @end

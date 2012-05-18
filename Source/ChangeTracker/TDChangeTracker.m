@@ -26,7 +26,7 @@
 
 
 @interface TDChangeTracker ()
-@property (readwrite, copy, nonatomic) id lastSequenceID;
+@property (readwrite, nonatomic) NSUInteger lastSequenceID;
 @end
 
 
@@ -40,7 +40,7 @@
 - (id)initWithDatabaseURL: (NSURL*)databaseURL
                      mode: (TDChangeTrackerMode)mode
                 conflicts: (BOOL)includeConflicts
-             lastSequence: (id)lastSequenceID
+             lastSequence: (SequenceNumber)lastSequenceID
                    client: (id<TDChangeTrackerClient>)client {
     NSParameterAssert(databaseURL);
     NSParameterAssert(client);
@@ -82,7 +82,7 @@
     if (_includeConflicts)
         [path appendString: @"&style=all_docs"];
     if (_lastSequenceID)
-        [path appendFormat: @"&since=%@", TDEscapeURLParam([_lastSequenceID description])];
+        [path appendFormat: @"&since=%i", _lastSequenceID];
     if (_filterName) {
         [path appendFormat: @"&filter=%@", TDEscapeURLParam(_filterName)];
         for (NSString* key in _filterParameters) {
@@ -112,7 +112,6 @@
     [_filterName release];
     [_filterParameters release];
     [_databaseURL release];
-    [_lastSequenceID release];
     [_error release];
     [_requestHeaders release];
     [super dealloc];
@@ -141,7 +140,7 @@
 - (BOOL) receivedChange: (NSDictionary*)change {
     if (![change isKindOfClass: [NSDictionary class]])
         return NO;
-    id seq = [change objectForKey: @"seq"];
+    NSUInteger seq = [(NSNumber *)[change objectForKey: @"seq"] unsignedIntegerValue];
     if (!seq) {
         // If a continuous feed closes (e.g. if its database is deleted), the last line it sends
         // will indicate the last_seq. This is normal, just ignore it and return success:

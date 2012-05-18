@@ -83,15 +83,15 @@
 }
 
 
-- (NSString*) lastSequenceWithRemoteURL: (NSURL*)url push: (BOOL)push {
-    return [_fmdb stringForQuery:@"SELECT last_sequence FROM replicators WHERE remote=? AND push=?",
-                                 url.absoluteString, $object(push)];
+- (NSUInteger) lastSequenceWithRemoteURL: (NSURL*)url push: (BOOL)push {
+    return [[_fmdb stringForQuery:@"SELECT last_sequence FROM replicators WHERE remote=? AND push=?",
+                                 url.absoluteString, $object(push)] integerValue];
 }
 
-- (BOOL) setLastSequence: (NSString*)lastSequence withRemoteURL: (NSURL*)url push: (BOOL)push {
+- (BOOL) setLastSequence: (SequenceNumber)lastSequence withRemoteURL: (NSURL*)url push: (BOOL)push {
     return [_fmdb executeUpdate: 
             @"INSERT OR REPLACE INTO replicators (remote, push, last_sequence) VALUES (?, ?, ?)",
-            url.absoluteString, $object(push), lastSequence];
+            url.absoluteString, $object(push), [NSNumber numberWithLongLong:lastSequence]];
 }
 
 
