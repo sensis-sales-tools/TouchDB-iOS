@@ -95,6 +95,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
                                                            client: self];
     _changeTracker.filterName = _filterName;
     _changeTracker.filterParameters = _filterParameters;
+    _changeTracker.requestHeaders = self.requestHeaders;
     unsigned heartbeat = $castIf(NSNumber, [_options objectForKey: @"heartbeat"]).unsignedIntValue;
     if (heartbeat >= 15000)
         _changeTracker.heartbeat = heartbeat;
