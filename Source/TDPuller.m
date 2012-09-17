@@ -53,6 +53,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     [_bulkRevsToPull release];
     [_downloadsToInsert release];
     [_pendingSequences release];
+    [_endingSequence release];
     [super dealloc];
 }
 
@@ -71,9 +72,9 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     // Get the current sequence number so we know the pull has "caught up":
     [self sendAsyncRequest: @"GET" path: @"/" body: nil
               onCompletion:^(id result, NSError *error) {
-                  _changeSequenceIdEnd = [(NSNumber *)[result objectForKey: @"update_seq"] unsignedIntegerValue];
-                  LogTo(Sync, @"Ending sequence = %i", self.changeSequenceIdEnd);
-                  [self checkIfCaughtUp: self.changeSequenceIdStart];
+                  _endingSequence = [[[result objectForKey: @"update_seq"] description] copy];
+                  LogTo(Sync, @"Ending sequence = %@", _endingSequence);
+                  [self checkIfCaughtUp: _lastSequence];
               }];
     
     [_pendingSequences release];
@@ -87,11 +88,11 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     if ([[_options objectForKey: @"feed"] isEqual: @"longpoll"])
         mode = kLongPoll;
     
-    LogTo(SyncVerbose, @"%@ starting ChangeTracker with since=%@", self, self.changeSequenceIdStart);
+    LogTo(SyncVerbose, @"%@ starting ChangeTracker with since=%@", self, _lastSequence);
     _changeTracker = [[TDChangeTracker alloc] initWithDatabaseURL: _remote
                                                              mode: mode
                                                         conflicts: YES
-                                                     lastSequence: self.changeSequenceIdStart
+                                                     lastSequence: _lastSequence
                                                            client: self];
     _changeTracker.filterName = _filterName;
     _changeTracker.filterParameters = _filterParameters;
@@ -145,7 +146,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
 
 // Got a _changes feed entry from the TDChangeTracker.
 - (void) changeTrackerReceivedChange: (NSDictionary*)change {
-    NSUInteger lastSequenceID = [(NSNumber *)[change objectForKey: @"seq"] unsignedIntegerValue];
+    NSString* lastSequenceID = [[change objectForKey: @"seq"] description];
     NSString* docID = [change objectForKey: @"id"];
     if (docID) {
         if ([TDDatabase isValidDocumentID: docID]) {
@@ -177,10 +178,10 @@ static NSString* joinQuotedEscaped(NSArray* strings);
 }
 
 
-- (void) checkIfCaughtUp: (SequenceNumber)sequence {
-    if (sequence != self.changeSequenceIdEnd)
+- (void) checkIfCaughtUp: (NSString*)sequence {
+    if (!$equal(sequence, _endingSequence))
         return;
-    LogTo(Sync, @"** Caught up, at sequence %i", self.changeSequenceIdEnd);
+    LogTo(Sync, @"** Caught up, at sequence %@", _endingSequence);
     if (!_continuous)
         [_changeTracker stop];
 }
@@ -209,7 +210,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
 - (void) processInbox: (TDRevisionList*)inbox {
     // Ask the local database which of the revs are not known to it:
     LogTo(SyncVerbose, @"%@: Looking up %@", self, inbox);
-    NSUInteger lastInboxSequence = [inbox.allRevisions.lastObject remoteSequenceID];
+    NSString* lastInboxSequence = [inbox.allRevisions.lastObject remoteSequenceID];
     NSUInteger total = _changesTotal - inbox.count;
     if (![_db findMissingRevisions: inbox]) {
         Warn(@"%@ failed to look up local revs", self);
@@ -223,9 +224,9 @@ static NSString* joinQuotedEscaped(NSArray* strings);
         // Instead of adding and immediately removing the revs to _pendingSequences,
         // just do the latest one (equivalent but faster):
         LogTo(SyncVerbose, @"%@: no new remote revisions to fetch", self);
-        SequenceNumber seq = [_pendingSequences addValue: [NSNumber numberWithUnsignedInteger:lastInboxSequence]];
+        SequenceNumber seq = [_pendingSequences addValue: lastInboxSequence];
         [_pendingSequences removeSequence: seq];
-        _changeSequenceIdStart = _pendingSequences.checkpointedValue;
+        self.lastSequence = _pendingSequences.checkpointedValue;
         return;
     }
     
@@ -243,9 +244,9 @@ static NSString* joinQuotedEscaped(NSArray* strings);
         } else {
             [self queueRemoteRevision: rev];
         }
-        rev.sequence = [_pendingSequences addValue: [NSNumber numberWithUnsignedInteger:rev.remoteSequenceID]];
+        rev.sequence = [_pendingSequences addValue: rev.remoteSequenceID];
     }
-    LogTo(Sync, @"%@ queued %u remote revisions from seq=%i (%u in bulk, %u individually)",
+    LogTo(Sync, @"%@ queued %u remote revisions from seq=%@ (%u in bulk, %u individually)",
           self, inbox.count, [[[inbox allRevisions] objectAtIndex: 0] remoteSequenceID],
           numBulked, inbox.count-numBulked);
     
@@ -314,7 +315,6 @@ static NSString* joinQuotedEscaped(NSArray* strings);
     [[[TDMultipartDownloader alloc] initWithURL: [NSURL URLWithString: urlStr]
                                        database: _db
                                      authorizer: _authorizer
-                                 requestHeaders: self.requestHeaders
                                    onCompletion:
         ^(TDMultipartDownloader* download, NSError *error) {
             // OK, now we've got the response revision:
@@ -440,7 +440,7 @@ static NSString* joinQuotedEscaped(NSArray* strings);
               self, (unsigned)downloads.count);
         
         // Checkpoint:
-        _changeSequenceIdStart = _pendingSequences.checkpointedValue;
+        self.lastSequence = _pendingSequences.checkpointedValue;
         
         success = YES;
     } @catch (NSException *x) {
@@ -465,6 +465,11 @@ static NSString* joinQuotedEscaped(NSArray* strings);
 @implementation TDPulledRevision
 
 @synthesize remoteSequenceID=_remoteSequenceID, conflicted=_conflicted;
+
+- (void) dealloc {
+    [_remoteSequenceID release];
+    [super dealloc];
+}
 
 @end
 

@@ -26,7 +26,7 @@
 
 
 @interface TDChangeTracker ()
-@property (readwrite, nonatomic) NSUInteger lastSequenceID;
+@property (readwrite, copy, nonatomic) id lastSequenceID;
 @end
 
 
@@ -35,12 +35,11 @@
 @synthesize lastSequenceID=_lastSequenceID, databaseURL=_databaseURL, mode=_mode;
 @synthesize heartbeat=_heartbeat, error=_error;
 @synthesize client=_client, filterName=_filterName, filterParameters=_filterParameters;
-@synthesize requestHeaders = _requestHeaders;
 
 - (id)initWithDatabaseURL: (NSURL*)databaseURL
                      mode: (TDChangeTrackerMode)mode
                 conflicts: (BOOL)includeConflicts
-             lastSequence: (SequenceNumber)lastSequenceID
+             lastSequence: (id)lastSequenceID
                    client: (id<TDChangeTrackerClient>)client {
     NSParameterAssert(databaseURL);
     NSParameterAssert(client);
@@ -82,7 +81,7 @@
     if (_includeConflicts)
         [path appendString: @"&style=all_docs"];
     if (_lastSequenceID)
-        [path appendFormat: @"&since=%i", _lastSequenceID];
+        [path appendFormat: @"&since=%@", TDEscapeURLParam([_lastSequenceID description])];
     if (_filterName) {
         [path appendFormat: @"&filter=%@", TDEscapeURLParam(_filterName)];
         for (NSString* key in _filterParameters) {
@@ -112,8 +111,8 @@
     [_filterName release];
     [_filterParameters release];
     [_databaseURL release];
+    [_lastSequenceID release];
     [_error release];
-    [_requestHeaders release];
     [super dealloc];
 }
 
@@ -140,7 +139,7 @@
 - (BOOL) receivedChange: (NSDictionary*)change {
     if (![change isKindOfClass: [NSDictionary class]])
         return NO;
-    NSUInteger seq = [(NSNumber *)[change objectForKey: @"seq"] unsignedIntegerValue];
+    id seq = [change objectForKey: @"seq"];
     if (!seq) {
         // If a continuous feed closes (e.g. if its database is deleted), the last line it sends
         // will indicate the last_seq. This is normal, just ignore it and return success:

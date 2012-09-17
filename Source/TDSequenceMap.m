@@ -72,9 +72,9 @@
 }
 
 
-- (NSUInteger) checkpointedValue {
+- (id) checkpointedValue {
     NSInteger index = (NSInteger)([self checkpointedSequence] - _firstValueSequence);
-    return (index >= 0) ? [(NSNumber *)[_values objectAtIndex: index] unsignedIntegerValue] : 0;
+    return (index >= 0) ? [_values objectAtIndex: index] : nil;
 }
 
 
@@ -85,40 +85,40 @@
 TestCase(TDSequenceMap) {
     TDSequenceMap* map = [[[TDSequenceMap alloc] init] autorelease];
     CAssertEq(map.checkpointedSequence, 0);
-    CAssertEq(map.checkpointedValue, (NSUInteger)0);
+    CAssertEqual(map.checkpointedValue, nil);
     CAssert(map.isEmpty);
     
     CAssertEq([map addValue: @"one"], 1);
     CAssertEq(map.checkpointedSequence, 0);
-    CAssertEq(map.checkpointedValue, (NSUInteger)0);
+    CAssertEqual(map.checkpointedValue, nil);
     CAssert(!map.isEmpty);
     
     CAssertEq([map addValue: @"two"], 2);
     CAssertEq(map.checkpointedSequence, 0);
-    CAssertEq(map.checkpointedValue, (NSUInteger)0);
+    CAssertEqual(map.checkpointedValue, nil);
     
     CAssertEq([map addValue: @"three"], 3);
     CAssertEq(map.checkpointedSequence, 0);
-    CAssertEq(map.checkpointedValue, (NSUInteger)0);
+    CAssertEqual(map.checkpointedValue, nil);
     
     [map removeSequence: 2];
     CAssertEq(map.checkpointedSequence, 0);
-    CAssertEq(map.checkpointedValue, (NSUInteger)0);
+    CAssertEqual(map.checkpointedValue, nil);
     
     [map removeSequence: 1];
     CAssertEq(map.checkpointedSequence, 2);
-    CAssertEq(map.checkpointedValue, (NSUInteger)2);
+    CAssertEqual(map.checkpointedValue, @"two");
     
     CAssertEq([map addValue: @"four"], 4);
     CAssertEq(map.checkpointedSequence, 2);
-    CAssertEq(map.checkpointedValue, (NSUInteger)2);
+    CAssertEqual(map.checkpointedValue, @"two");
     
     [map removeSequence: 3];
     CAssertEq(map.checkpointedSequence, 3);
-    CAssertEq(map.checkpointedValue, (NSUInteger)3);
+    CAssertEqual(map.checkpointedValue, @"three");
     
     [map removeSequence: 4];
     CAssertEq(map.checkpointedSequence, 4);
-    CAssertEq(map.checkpointedValue, (NSUInteger)4);
+    CAssertEqual(map.checkpointedValue, @"four");
     CAssert(map.isEmpty);
 }

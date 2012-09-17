@@ -54,9 +54,9 @@
 
 @interface TDDatabase (Replication_Internal)
 - (void) stopAndForgetReplicator: (TDReplicator*)repl;
-- (NSUInteger) lastSequenceWithRemoteURL: (NSURL*)url
-                                    push: (BOOL)push;
-- (BOOL) setLastSequence: (SequenceNumber)lastSequence
+- (NSString*) lastSequenceWithRemoteURL: (NSURL*)url
+                                   push: (BOOL)push;
+- (BOOL) setLastSequence: (NSString*)lastSequence
            withRemoteURL: (NSURL*)url
                     push: (BOOL)push;
 + (NSString*) joinQuotedStrings: (NSArray*)strings;
@@ -95,6 +95,7 @@
 
 @interface TDReplicator ()
 // protected:
+@property (copy) NSString* lastSequence;
 @property (readwrite, nonatomic) NSUInteger changesProcessed, changesTotal;
 - (void) maybeCreateRemoteDB;
 - (void) beginReplicating;

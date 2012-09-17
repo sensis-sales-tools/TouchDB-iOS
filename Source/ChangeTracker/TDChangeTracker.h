@@ -14,7 +14,6 @@
 //  and limitations under the License.
 
 #import <Foundation/Foundation.h>
-#import "TDRevision.h"
 @class TDChangeTracker;
 
 
@@ -40,6 +39,7 @@ typedef enum TDChangeTrackerMode {
     NSURL* _databaseURL;
     id<TDChangeTrackerClient> _client;
     TDChangeTrackerMode _mode;
+    id _lastSequenceID;
     NSError* _error;
     BOOL _includeConflicts;
     NSString* _filterName;
@@ -50,17 +50,16 @@ typedef enum TDChangeTrackerMode {
 - (id)initWithDatabaseURL: (NSURL*)databaseURL
                      mode: (TDChangeTrackerMode)mode
                 conflicts: (BOOL)includeConflicts
-             lastSequence: (SequenceNumber)lastSequenceID
+             lastSequence: (id)lastSequenceID
                    client: (id<TDChangeTrackerClient>)client;
 
 @property (readonly, nonatomic) NSURL* databaseURL;
 @property (readonly, nonatomic) NSString* databaseName;
 @property (readonly) NSURL* changesFeedURL;
 @property (readonly, nonatomic) TDChangeTrackerMode mode;
-@property (readonly, nonatomic) NSUInteger lastSequenceID;
+@property (readonly, copy, nonatomic) id lastSequenceID;
 @property (retain, nonatomic) NSError* error;
 @property (assign, nonatomic) id<TDChangeTrackerClient> client;
-@property (retain, nonatomic) NSDictionary *requestHeaders;
 
 @property (copy) NSString* filterName;
 @property (copy) NSDictionary* filterParameters;
