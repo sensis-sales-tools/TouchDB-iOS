@@ -36,6 +36,8 @@
 - (id) initWithRouter: (TDRouter*)router forConnection:(TDHTTPConnection*)connection {
     self = [super init];
     if (self) {
+        //EnableLog(YES);
+        //EnableLogTo(TDListenerVerbose, YES);
         _router = [router retain];
         _connection = connection;
         router.onResponseReady = ^(TDResponse* r) {
@@ -51,21 +53,29 @@
         if (connection.listener.readOnly) {
             router.onAccessCheck = ^TDStatus(TDDatabase* db, NSString* docID, SEL action) {
                 NSString* method = router.request.HTTPMethod;
-                if (![method isEqualToString: @"GET"] && ![method isEqualToString: @"HEAD"])
-                    return kTDStatusForbidden;
-                return kTDStatusOK;
+                if ([method isEqualToString: @"GET"] || [method isEqualToString: @"HEAD"])
+                    return kTDStatusOK;
+                if ([method isEqualToString: @"POST"]) {
+                    NSString* actionStr = NSStringFromSelector(action);
+                    if ([actionStr isEqualToString: @"do_POST_all_docs:"]
+                            || [actionStr isEqualToString: @"do_POST_revs_diff:"])
+                        return kTDStatusOK;
+                }
+                return kTDStatusForbidden;
             };
         }
         
-        // Run the router, synchronously:
+        // Run the router, asynchronously:
         LogTo(TDListenerVerbose, @"%@: Starting...", self);
         [router start];
+        [self retain];      // will be released in -cleanUp
         LogTo(TDListenerVerbose, @"%@: Returning from -init", self);
     }
     return self;
 }
 
 - (void)dealloc {
+    LogTo(TDListenerVerbose, @"DEALLOC %@", self);
     [_router release];
     [_response release];
     [_data release];
@@ -94,9 +104,9 @@
 }
 
 
-- (BOOL) delayResponeHeaders {  // [sic]
+- (BOOL) delayResponseHeaders {
     @synchronized(self) {
-        LogTo(TDListenerVerbose, @"%@ answers delayResponeHeaders=%d", self, !_response);
+        LogTo(TDListenerVerbose, @"%@ answers delayResponseHeaders=%d", self, !_response);
         if (!_response)
             _delayedHeaders = YES;
         return !_response;
@@ -120,7 +130,7 @@
 }
 
 - (NSDictionary *) httpHeaders {
-    LogTo(TDListenerVerbose, @"%@ answers httpHeaders={%d headers}", self, _response.headers.count);
+    LogTo(TDListenerVerbose, @"%@ answers httpHeaders={%u headers}", self, (unsigned)_response.headers.count);
     return _response.headers;
 }
 
@@ -128,10 +138,17 @@
 - (void) onDataAvailable: (NSData*)data finished: (BOOL)finished {
     @synchronized(self) {
         LogTo(TDListenerVerbose, @"%@ adding %u bytes", self, (unsigned)data.length);
-        if (_data)
-            [_data appendData: data];
-        else
-            _data = [data mutableCopy];
+        if (!_data) {
+            _data = [data copy];
+            _dataMutable = NO;
+        } else {
+            if (!_dataMutable) {
+                [_data autorelease];
+                _data = [_data mutableCopy];
+                _dataMutable = YES;
+            }
+            [(NSMutableData*)_data appendData: data];
+        }
         if (finished)
             [self onFinished];
         else if (_chunked)
@@ -171,7 +188,7 @@
             [_data autorelease];
             _data = nil;
         }
-        LogTo(TDListenerVerbose, @"%@ sending %u bytes", self, result.length);
+        LogTo(TDListenerVerbose, @"%@ sending %u bytes", self, (unsigned)result.length);
         return result;
     }
 }
@@ -183,21 +200,28 @@
 }
 
 
+- (void) cleanUp {
+    // Break cycles:
+    _router.onResponseReady = nil;
+    _router.onDataAvailable = nil;
+    _router.onFinished = nil;
+    if (!_finished) {
+        _finished = true;
+        [self autorelease];
+    }
+}
+
+
 - (void) onFinished {
     @synchronized(self) {
         if (_finished)
             return;
-        _finished = true;
         _askedIfChunked = true;
+        [self cleanUp];
 
         LogTo(TDListenerVerbose, @"%@ Finished!", self);
 
-        // Break cycles:
-        _router.onResponseReady = nil;
-        _router.onDataAvailable = nil;
-        _router.onFinished = nil;
-
-        if (!_chunked || _offset == 0) {
+        if ((!_chunked || _offset == 0) && ![_router.request.HTTPMethod isEqualToString: @"HEAD"]) {
             // Response finished immediately, before the connection asked for any data, so we're free
             // to massage the response:
             LogTo(TDListenerVerbose, @"%@ prettifying response body", self);
@@ -207,8 +231,11 @@
             BOOL pretty = [_router boolQuery: @"pretty"];
 #endif
             if (pretty) {
-                [_data release];
-                _data = [_response.body.asPrettyJSON mutableCopy];
+                NSString* contentType = (_response.headers)[@"Content-Type"];
+                if ([contentType hasPrefix: @"application/json"] && _data.length < 100000) {
+                    [_data release];
+                    _data = [_response.body.asPrettyJSON mutableCopy];
+                }
             }
         }
         [_connection responseHasAvailableData: self];
@@ -217,9 +244,12 @@
 
 
 - (void)connectionDidClose {
-    _connection = nil;
-    [_data release];
-    _data = nil;
+    @synchronized(self) {
+        _connection = nil;
+        [_data release];
+        _data = nil;
+        [self cleanUp];
+    }
 }
 
 

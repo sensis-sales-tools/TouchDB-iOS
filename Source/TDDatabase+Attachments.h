@@ -52,9 +52,15 @@ typedef enum {
                             encoding: (TDAttachmentEncoding*)outEncoding
                               status: (TDStatus*)outStatus;
 
-/** Uses the "digest" field of the attachment dict to look up the attachment in the store and return an input stream to read its data. */
-- (NSInputStream*) inputStreamForAttachmentDict: (NSDictionary*)attachmentDict
-                                         length: (UInt64*)outLength;
+/** Returns the location of an attachment's file in the blob store. */
+- (NSString*) getAttachmentPathForSequence: (SequenceNumber)sequence
+                                     named: (NSString*)filename
+                                      type: (NSString**)outType
+                                  encoding: (TDAttachmentEncoding*)outEncoding
+                                    status: (TDStatus*)outStatus;
+
+/** Uses the "digest" field of the attachment dict to look up the attachment in the store and return a file URL to it. DO NOT MODIFY THIS FILE! */
+- (NSURL*) fileForAttachmentDict: (NSDictionary*)attachmentDict;
 
 /** Deletes obsolete attachments from the database and blob store. */
 - (TDStatus) garbageCollectAttachments;

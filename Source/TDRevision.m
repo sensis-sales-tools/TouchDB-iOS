@@ -40,9 +40,9 @@
 
 - (id) initWithBody: (TDBody*)body {
     Assert(body);
-    self = [self initWithDocID: [body propertyForKey: @"_id"]
-                         revID: [body propertyForKey: @"_rev"]
-                       deleted: [body propertyForKey: @"_deleted"] == $true];
+    self = [self initWithDocID: body[@"_id"]
+                         revID: body[@"_rev"]
+                       deleted: body[@"_deleted"] == $true];
     if (self) {
         self.body = body;
     }
@@ -69,7 +69,8 @@
     [super dealloc];
 }
 
-@synthesize docID=_docID, revID=_revID, deleted=_deleted, body=_body, sequence=_sequence;
+@synthesize docID=_docID, revID=_revID, deleted=_deleted, missing=_missing,
+            body=_body, sequence=_sequence;
 
 - (unsigned) generation {
     return [[self class] generationFromRevID: _revID];
@@ -111,6 +112,10 @@
     self.body = [TDBody bodyWithProperties: properties];
 }
 
+- (id)objectForKeyedSubscript:(id)key {
+    return [_body objectForKeyedSubscript: key];
+}
+
 - (NSData*) asJSON {
     return _body.asJSON;
 }
@@ -140,8 +145,16 @@
     Assert(docID && revID);
     Assert(!_docID || $equal(_docID, docID));
     TDRevision* rev = [[[self class] alloc] initWithDocID: docID revID: revID deleted: _deleted];
-    if ( _body)
-        rev.body = _body;
+
+    // Update the _id and _rev in the new object's JSON:
+    NSDictionary* properties = self.properties;
+    NSMutableDictionary* nuProperties = properties ? [properties mutableCopy]
+                                                   : [[NSMutableDictionary alloc] init];
+    [nuProperties setValue: docID forKey: @"_id"];
+    [nuProperties setValue: revID forKey: @"_rev"];
+    rev.properties = nuProperties;
+    [nuProperties release];
+
     return rev;
 }
 
@@ -183,6 +196,10 @@
 }
 
 @synthesize allRevisions=_revs;
+
+- (TDRevision*) objectAtIndexedSubscript: (NSUInteger)index {
+    return _revs[index];
+}
 
 - (void) addRev: (TDRevision*)rev {
     [_revs addObject: rev];

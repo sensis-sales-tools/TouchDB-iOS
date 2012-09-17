@@ -36,6 +36,20 @@
 }
 
 
+- (BOOL)isPasswordProtected:(NSString *)path {
+    return self.listener.requiresAuth;
+}
+
+- (NSString*) realm {
+    return self.listener.realm;
+}
+
+- (NSString*) passwordForUser: (NSString*)username {
+    LogTo(TDListener, @"Login attempted for user '%@'", username);
+    return [self.listener passwordForUser: username];
+}
+
+
 - (BOOL)supportsMethod:(NSString *)method atPath:(NSString *)path {
     return $equal(method, @"POST") || $equal(method, @"PUT") || $equal(method,  @"DELETE")
         || [super supportsMethod: method atPath: path];
@@ -54,11 +68,13 @@
     urlRequest.HTTPBody = request.body;
     NSDictionary* headers = request.allHeaderFields;
     for (NSString* header in headers)
-        [urlRequest setValue: [headers objectForKey: header] forHTTPHeaderField: header];
+        [urlRequest setValue: headers[header] forHTTPHeaderField: header];
     
     // Create a TDRouter:
     TDRouter* router = [[TDRouter alloc] initWithServer: ((TDHTTPServer*)config.server).tdServer
-                                                request: urlRequest];
+                                                request: urlRequest
+                                                isLocal: NO];
+    router.processRanges = NO;  // The HTTP server framework does this already
     TDHTTPResponse* response = [[[TDHTTPResponse alloc] initWithRouter: router
                                                          forConnection: self] autorelease];
     

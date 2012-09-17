@@ -13,12 +13,12 @@
 @interface TDMultipartUploader : TDRemoteRequest
 {
     @private
-    TDMultipartWriter* _streamer;
+    TDMultipartWriter* _multipartWriter;
 }
 
 - (id) initWithURL: (NSURL *)url
           streamer: (TDMultipartWriter*)streamer
-        authorizer: (id<TDAuthorizer>)authorizer
+    requestHeaders: (NSDictionary *) requestHeaders
       onCompletion: (TDRemoteRequestCompletionBlock)onCompletion;
 
 @end

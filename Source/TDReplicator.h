@@ -23,6 +23,7 @@ extern NSString* TDReplicatorStoppedNotification;
 @interface TDReplicator : NSObject
 {
     @protected
+    NSThread* _thread;
     TDDatabase* _db;
     NSURL* _remote;
     TDReachability* _host;
@@ -37,12 +38,17 @@ extern NSString* TDReplicatorStoppedNotification;
     NSError* _error;
     NSString* _sessionID;
     TDBatcher* _batcher;
+    NSMutableArray* _remoteRequests;
     int _asyncTaskCount;
     NSUInteger _changesProcessed, _changesTotal;
     CFAbsoluteTime _startTime;
     id<TDAuthorizer> _authorizer;
     NSDictionary* _options;
+    NSDictionary* _requestHeaders;
 }
+
++ (NSString *)progressChangedNotification;
++ (NSString *)stoppedNotification;
 
 - (id) initWithDB: (TDDatabase*)db
            remote: (NSURL*)remote
@@ -56,6 +62,10 @@ extern NSString* TDReplicatorStoppedNotification;
 @property (copy) NSString* filterName;
 @property (copy) NSDictionary* filterParameters;
 @property (copy) NSDictionary* options;
+
+/** Optional dictionary of headers to be added to all requests to remote servers. */
+@property (copy) NSDictionary* requestHeaders;
+
 @property (retain) id<TDAuthorizer> authorizer;
 
 /** Starts the replicator.
@@ -64,7 +74,7 @@ extern NSString* TDReplicatorStoppedNotification;
 - (void) start;
 
 /** Request to stop the replicator.
-    Any pending asynchronous operations will be finished first.
+    Any pending asynchronous operations will be canceled.
     TDReplicatorStoppedNotification will be posted when it finally stops. */
 - (void) stop;
 
@@ -92,29 +102,7 @@ extern NSString* TDReplicatorStoppedNotification;
     This is only an estimate and its value will change during replication. It starts at zero and returns to zero when replication stops. */
 @property (readonly, nonatomic) NSUInteger changesTotal;
 
-@end
-
-
-
-/** Protocol for adding authorization to HTTP requests sent by a TDReplicator. */
-@protocol TDAuthorizer <NSObject>
-
-/** Should generate and return an authorization string for the given request.
-    The string, if non-nil, will be set as the value of the "Authorization:" HTTP header. */
-- (NSString*) authorizeURLRequest: (NSMutableURLRequest*)request;
-
-@end
-
-
-
-/** Simple implementation of TDAuthorizer that does HTTP Basic Auth. */
-@interface TDBasicAuthorizer : NSObject <TDAuthorizer>
-{
-    @private
-    NSURLCredential* _credential;
-}
-
-/** Initialize given a credential object that contains a username and password. */
-- (id) initWithCredential: (NSURLCredential*)credential;
+/** JSON-compatible array of status info about active remote HTTP requests. */
+@property (readonly) NSArray* activeRequestsStatus;
 
 @end

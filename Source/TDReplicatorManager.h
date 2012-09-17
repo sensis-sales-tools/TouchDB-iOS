@@ -8,6 +8,7 @@
 
 #import <TouchDB/TDDatabase.h>
 @class TDDatabaseManager;
+@protocol TDAuthorizer;
 
 
 extern NSString* const kTDReplicatorDatabaseName;
@@ -20,6 +21,7 @@ extern NSString* const kTDReplicatorDatabaseName;
 {
     TDDatabaseManager* _dbManager;
     TDDatabase* _replicatorDB;
+    NSThread* _thread;
     NSMutableDictionary* _replicatorsByDocID;
     BOOL _updateInProgress;
 }
@@ -34,6 +36,8 @@ extern NSString* const kTDReplicatorDatabaseName;
                             toDatabase: (TDDatabase**)outDatabase
                                 remote: (NSURL**)outRemote
                                 isPush: (BOOL*)outIsPush
-                          createTarget: (BOOL*)outCreateTarget;
+                          createTarget: (BOOL*)outCreateTarget
+                               headers: (NSDictionary**)outHeaders
+                            authorizer: (id<TDAuthorizer>*)outAuthorizer;
 
 @end

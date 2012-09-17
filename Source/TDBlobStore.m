@@ -80,8 +80,8 @@
     char *dst = &out[0];
     for( size_t i=0; i<sizeof(key.bytes); i+=1 )
         dst += sprintf(dst,"%02X", key.bytes[i]);
-    strcat(out, ".");
-    strcat(out, kFileExtension);
+    strlcat(out, ".", sizeof(out));
+    strlcat(out, kFileExtension, sizeof(out));
     NSString* name =  [[NSString alloc] initWithCString: out encoding: NSASCIIStringEncoding];
     NSString* path = [_path stringByAppendingPathComponent: name];
     [name release];
@@ -117,9 +117,13 @@
                                   length: (UInt64*)outLength
 {
     NSString* path = [self pathForKey: key];
-    if (outLength)
-        *outLength = [[[NSFileManager defaultManager] attributesOfItemAtPath: path error: NULL]
-                            fileSize];
+    if (outLength) {
+        NSDictionary* info = [[NSFileManager defaultManager] attributesOfItemAtPath: path
+                                                                              error: NULL];
+        if (!info)
+            return nil;
+        *outLength = [info fileSize];
+    }
     return [NSInputStream inputStreamWithFileAtPath: path];
 }
 
@@ -131,7 +135,12 @@
     if ([[NSFileManager defaultManager] isReadableFileAtPath: path])
         return YES;
     NSError* error;
-    if (![blob writeToFile: path options: NSDataWritingAtomic error: &error]) {
+    if (![blob writeToFile: path
+                   options: NSDataWritingAtomic
+#if TARGET_OS_IPHONE
+                            | NSDataWritingFileProtectionCompleteUnlessOpen
+#endif
+                     error: &error]) {
         Warn(@"TDBlobStore: Couldn't write to %@: %@", path, error);
         return NO;
     }
@@ -149,7 +158,7 @@
         if ([[self class] getKey: &key forFilename: filename])
             return [NSData dataWithBytes: &key length: sizeof(key)];
         else
-            return nil;
+            return (id)nil;
     }];
 }
 
@@ -180,12 +189,13 @@
 }
 
 
-- (NSUInteger) deleteBlobsExceptWithKeys: (NSSet*)keysToKeep {
+- (NSInteger) deleteBlobsExceptWithKeys: (NSSet*)keysToKeep {
     NSFileManager* fmgr = [NSFileManager defaultManager];
     NSArray* blob = [fmgr contentsOfDirectoryAtPath: _path error: NULL];
     if (!blob)
         return 0;
     NSUInteger numDeleted = 0;
+    BOOL errors = NO;
     NSMutableData* curKeyData = [NSMutableData dataWithLength: sizeof(TDBlobKey)];
     for (NSString* filename in blob) {
         if ([[self class] getKey: curKeyData.mutableBytes forFilename: filename]) {
@@ -194,12 +204,14 @@
                 if ([fmgr removeItemAtPath: [_path stringByAppendingPathComponent: filename]
                                  error: &error])
                     ++numDeleted;
-                else
+                else {
+                    errors = YES;
                     Warn(@"%@: Failed to delete '%@': %@", self, filename, error);
+                }
             }
         }
     }
-    return numDeleted;
+    return errors ? -1 : numDeleted;
 }
 
 
@@ -249,7 +261,16 @@
             [self release];
             return nil;
         }
-        [[NSFileManager defaultManager] createFileAtPath: _tempPath contents: nil attributes: nil];
+        NSDictionary* attributes = nil;
+#if TARGET_OS_IPHONE
+        attributes = @{NSFileProtectionKey: NSFileProtectionCompleteUnlessOpen};
+#endif
+        if (![[NSFileManager defaultManager] createFileAtPath: _tempPath
+                                                     contents: nil
+                                                   attributes: attributes]) {
+            [self release];
+            return nil;
+        }
         _out = [[NSFileHandle fileHandleForWritingAtPath: _tempPath] retain];
         if (!_out) {
             [self release];

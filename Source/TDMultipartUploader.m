@@ -19,29 +19,60 @@
 @implementation TDMultipartUploader
 
 - (id) initWithURL: (NSURL *)url
-          streamer: (TDMultipartWriter*)streamer
-        authorizer: (id<TDAuthorizer>)authorizer
+          streamer: (TDMultipartWriter*)writer
+    requestHeaders: (NSDictionary *) requestHeaders
       onCompletion: (TDRemoteRequestCompletionBlock)onCompletion
 {
-    Assert(streamer);
-    return [super initWithMethod: @"PUT" URL: url body: streamer
-                      authorizer: authorizer
+    Assert(writer);
+    self = [super initWithMethod: @"PUT" 
+                             URL: url 
+                            body: writer
+                  requestHeaders: requestHeaders 
                     onCompletion: onCompletion];
+    if (self) {
+        _multipartWriter = [writer retain];
+        // It's important to set a Content-Length header -- without this, CFNetwork won't know the
+        // length of the body stream, so it has to send the body chunked. But unfortunately CouchDB
+        // doesn't correctly parse chunked multipart bodies:
+        // https://issues.apache.org/jira/browse/COUCHDB-1403
+        SInt64 length = _multipartWriter.length;
+        Assert(length >= 0, @"HTTP multipart upload body has indeterminate length");
+        [_request setValue: $sprintf(@"%lld", length) forHTTPHeaderField: @"Content-Length"];
+    }
+    return self;
 }
 
+
 - (void)dealloc {
-    [_streamer release];
+    [_multipartWriter release];
     [super dealloc];
 }
 
-- (void) setupRequest: (NSMutableURLRequest*)request withBody: (id)body {
-    _streamer = [body retain];
-    [_streamer openForURLRequest: request];
-    [request setValue: $sprintf(@"%llu", _streamer.length) forHTTPHeaderField: @"Content-Length"];
-    // It's important to set a Content-Length header -- without this, CFNetwork won't know the
-    // length of the body stream, so it has to send the body chunked. But unfortunately CouchDB
-    // doesn't correctly parse chunked multipart bodies:
-    // https://issues.apache.org/jira/browse/COUCHDB-1403
+
+- (void) start {
+    [_multipartWriter openForURLRequest: _request];
+    [super start];
+}
+
+
+- (NSInputStream *)connection:(NSURLConnection *)connection
+            needNewBodyStream:(NSURLRequest *)request
+{
+    LogTo(TDRemoteRequest, @"%@: Needs new body stream, resetting writer...", self);
+    [_multipartWriter close];
+    return [_multipartWriter openForInputStream];
+}
+
+
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+    if ($equal(error.domain, NSURLErrorDomain) && error.code == NSURLErrorRequestBodyStreamExhausted) {
+        // The connection is complaining that the body input stream closed prematurely.
+        // Check whether this is because the multipart writer got an error on _its_ input stream:
+        NSError* writerError = _multipartWriter.error;
+        if (writerError)
+            error = writerError;
+    }
+    [super connection: connection didFailWithError: error];
 }
 
 @end

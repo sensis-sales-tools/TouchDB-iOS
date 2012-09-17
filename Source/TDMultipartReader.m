@@ -76,6 +76,8 @@ static NSData* kCRLFCRLF;
     _buffer = nil;
     [_headers release];
     _headers = nil;
+    [_boundary release];
+    _boundary = nil;
 }
 
 
@@ -134,7 +136,7 @@ static NSData* kCRLFCRLF;
                 return NO;
             NSString* key = trim([header substringToIndex: colon.location]);
             NSString* value = trim([header substringFromIndex: NSMaxRange(colon)]);
-            [_headers setObject: value forKey: key];
+            _headers[key] = value;
         }
     }
     return YES;
@@ -343,14 +345,14 @@ TestCase(TDMultipartReader_Simple) {
     NSData* mime = [@"--BOUNDARY\r\nFoo: Bar\r\n Header : Val ue \r\n\r\npart the first\r\n--BOUNDARY  \r\n\r\n2nd part\r\n--BOUNDARY--"
                             dataUsingEncoding: NSUTF8StringEncoding];
         
-    NSArray* expectedParts = $array([@"part the first" dataUsingEncoding: NSUTF8StringEncoding],
-                                    [@"2nd part" dataUsingEncoding: NSUTF8StringEncoding]);
-    NSArray* expectedHeaders = $array($dict({@"Foo", @"Bar"},
+    NSArray* expectedParts = @[[@"part the first" dataUsingEncoding: NSUTF8StringEncoding],
+                                    [@"2nd part" dataUsingEncoding: NSUTF8StringEncoding]];
+    NSArray* expectedHeaders = @[$dict({@"Foo", @"Bar"},
                                             {@"Header", @"Val ue"}),
-                                      $dict());
+                                      $dict()];
 
     for (NSUInteger chunkSize = 1; chunkSize <= mime.length; ++chunkSize) {
-        Log(@"--- chunkSize = %u", chunkSize);
+        Log(@"--- chunkSize = %u", (unsigned)chunkSize);
         TestMultipartReaderDelegate* delegate = [[[TestMultipartReaderDelegate alloc] init] autorelease];
         TDMultipartReader* reader = [[[TDMultipartReader alloc] initWithContentType: @"multipart/related; boundary=\"BOUNDARY\"" delegate: delegate] autorelease];
         CAssert(!reader.finished);

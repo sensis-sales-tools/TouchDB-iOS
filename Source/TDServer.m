@@ -42,11 +42,16 @@
 #endif
 
 
-- (id) initWithDirectory: (NSString*)dirPath error: (NSError**)outError {
+- (id) initWithDirectory: (NSString*)dirPath
+                 options: (const TDDatabaseManagerOptions*)options
+                   error: (NSError**)outError
+{
     if (outError) *outError = nil;
     self = [super init];
     if (self) {
-        _manager = [[TDDatabaseManager alloc] initWithDirectory: dirPath error: outError];
+        _manager = [[TDDatabaseManager alloc] initWithDirectory: dirPath
+                                                        options: options
+                                                          error: outError];
         if (!_manager) {
             [self release];
             return nil;
@@ -59,6 +64,10 @@
         [_serverThread start];
     }
     return self;
+}
+
+- (id) initWithDirectory: (NSString*)dirPath error: (NSError**)outError {
+    return [self initWithDirectory: dirPath options: NULL error: outError];
 }
 
 
@@ -106,7 +115,7 @@
             CFRelease(source);
 #endif
             
-            // Initialize the replicator:
+            // Initialize the replicator, if it's enabled:
             [_manager replicatorManager];
         }
         
@@ -140,6 +149,17 @@
 
 
 @end
+
+
+
+NSURL* TDStartServer(NSString* serverDirectory, NSError** outError) {
+    CAssert(![TDURLProtocol server], @"A TDServer is already running");
+    TDServer* tdServer = [[[TDServer alloc] initWithDirectory: serverDirectory
+                                                        error: outError] autorelease];
+    if (!tdServer)
+        return nil;
+    return [TDURLProtocol registerServer: tdServer forHostname: nil];
+}
 
 
 

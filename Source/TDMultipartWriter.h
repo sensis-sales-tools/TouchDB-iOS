@@ -16,9 +16,8 @@
     @private
     NSString* _boundary;
     NSString* _contentType;
-    NSData* _separatorData;
+    NSData* _finalBoundary;
     NSDictionary* _nextPartsHeaders;
-    UInt64 _length;
 }
 
 /** Initializes an instance.
@@ -34,15 +33,6 @@
 
 /** Call this before adding a new stream/data/file to specify the MIME headers that should go with it. */
 - (void) setNextPartsHeaders: (NSDictionary*)headers;
-
-/** Add a stream and tell the streamer its length so it can adjust its .length property.
-    You can also call the inherited -addData: and -addFile: methods; those will get the length of the data/file for you. */
-- (void) addStream: (NSInputStream*)partStream length:(UInt64)length;
-
-/** Total length of the stream.
-    This is just computed by adding the values passed to -addStream:length:, and the lengths of the NSData objects and files added, plus the MIME boundary strings.
-    Many clients won't care about the length, but TDMultipartUploader does. */
-@property (readonly, nonatomic) UInt64 length;
 
 /** Attaches the writer to the URL request.
     This calls -openForInputStream and sets the resulting input stream as the HTTPBodyStream of the request. It also sets the Content-Type header of the request. */

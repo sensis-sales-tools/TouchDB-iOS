@@ -18,11 +18,19 @@
 #import "TDPuller.h"
 #import <TouchDB/TDDatabase.h>
 #import "TDRemoteRequest.h"
+#import "TDAuthorizer.h"
 #import "TDBatcher.h"
 #import "TDReachability.h"
 #import "TDInternal.h"
 #import "TDMisc.h"
 #import "TDBase64.h"
+#import "TDCanonicalJSON.h"
+#import "MYBlockUtils.h"
+#import "MYURLUtils.h"
+
+#if TARGET_OS_IPHONE
+#import <UIKit/UIApplication.h>
+#endif
 
 
 #define kProcessDelay 0.5
@@ -44,6 +52,17 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 @implementation TDReplicator
 
++ (NSString *)progressChangedNotification
+{
+    return TDReplicatorProgressChangedNotification;
+}
+
++ (NSString *)stoppedNotification
+{
+    return TDReplicatorStoppedNotification;
+}
+
+
 - (id) initWithDB: (TDDatabase*)db
            remote: (NSURL*)remote
              push: (BOOL)push
@@ -61,6 +80,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     
     self = [super init];
     if (self) {
+        _thread = [NSThread currentThread];
         _db = db;
         _remote = [remote retain];
         _continuous = continuous;
@@ -75,6 +95,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 - (void)dealloc {
     [self stop];
+    [[NSNotificationCenter defaultCenter] removeObserver: self];
     [_remote release];
     [_host stop];
     [_host release];
@@ -87,6 +108,8 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     [_error release];
     [_authorizer release];
     [_options release];
+    [_requestHeaders release];
+    [_remoteRequests release];
     [super dealloc];
 }
 
@@ -109,6 +132,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 @synthesize changesProcessed=_changesProcessed, changesTotal=_changesTotal;
 @synthesize remoteCheckpoint=_remoteCheckpoint;
 @synthesize authorizer=_authorizer;
+@synthesize requestHeaders = _requestHeaders;
 
 
 - (BOOL) isPush {
@@ -136,8 +160,8 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 - (void) postProgressChanged {
     LogTo(SyncVerbose, @"%@: postProgressChanged (%u/%u, active=%d (batch=%u, net=%u), online=%d)", 
-          self, _changesProcessed, _changesTotal,
-          _active, _batcher.count, _asyncTaskCount, _online);
+          self, (unsigned)_changesProcessed, (unsigned)_changesTotal,
+          _active, (unsigned)_batcher.count, _asyncTaskCount, _online);
     NSNotification* n = [NSNotification notificationWithName: TDReplicatorProgressChangedNotification
                                                       object: self];
     [[NSNotificationQueue defaultQueue] enqueueNotification: n
@@ -167,6 +191,9 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 }
 
 - (void) setError:(NSError *)error {
+    if (error.code == NSURLErrorCancelled && $equal(error.domain, NSURLErrorDomain))
+        return;
+    
     if (ifSetObj(&_error, error))
         [self postProgressChanged];
 }
@@ -183,8 +210,8 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     // The cycle is broken in -stopped when I release _batcher.
     _batcher = [[TDBatcher alloc] initWithCapacity: kInboxCapacity delay: kProcessDelay
                  processor:^(NSArray *inbox) {
-                     LogTo(SyncVerbose, @"*** %@: BEGIN processInbox (%i sequences)",
-                           self, inbox.count);
+                     LogTo(SyncVerbose, @"*** %@: BEGIN processInbox (%u sequences)",
+                           self, (unsigned)inbox.count);
                      TDRevisionList* revs = [[TDRevisionList alloc] initWithArray: inbox];
                      [self processInbox: revs];
                      [revs release];
@@ -195,6 +222,13 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
     self.running = YES;
     _startTime = CFAbsoluteTimeGetCurrent();
+    
+#if TARGET_OS_IPHONE
+    // Register for foreground/background transition notifications, on iOS:
+    [[NSNotificationCenter defaultCenter] addObserver: self selector: @selector(appBackgrounding:)
+                                                 name: UIApplicationDidEnterBackgroundNotification
+                                               object: nil];
+#endif
     
     // Start reachability checks. (This creates another ref cycle, because
     // the block also retains a ref to self. Cycle is also broken in -stopped.)
@@ -215,9 +249,16 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     if (!_running)
         return;
     LogTo(Sync, @"%@ STOPPING...", self);
-    [_batcher flush];
+    [_batcher flushAll];
     _continuous = NO;
-    if (_asyncTaskCount == 0)
+#if TARGET_OS_IPHONE
+    // Unregister for background transition notifications, on iOS:
+    [[NSNotificationCenter defaultCenter] removeObserver: self
+                                                 name: UIApplicationDidEnterBackgroundNotification
+                                               object: nil];
+#endif
+    [self stopRemoteRequests];
+    if (_running && _asyncTaskCount == 0)
         [self stopped];
 }
 
@@ -239,27 +280,30 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 
 - (BOOL) goOffline {
-    if (!_online || !_running)
+    if (!_online)
         return NO;
     LogTo(Sync, @"%@: Going offline", self);
     _online = NO;
+    [self stopRemoteRequests];
     [self postProgressChanged];
     return YES;
 }
 
 
 - (BOOL) goOnline {
-    if (_online || !_running)
+    if (_online)
         return NO;
     LogTo(Sync, @"%@: Going online", self);
     _online = YES;
-    
-    [_lastSequence release];
-    _lastSequence = nil;
-    self.error = nil;
 
-    [self fetchRemoteCheckpointDoc];
-    [self postProgressChanged];
+    if (_running) {
+        [_lastSequence release];
+        _lastSequence = nil;
+        self.error = nil;
+
+        [self fetchRemoteCheckpointDoc];
+        [self postProgressChanged];
+    }
     return YES;
 }
 
@@ -272,6 +316,17 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     else if (host.reachabilityKnown)
         [self goOffline];
 }
+
+
+#if TARGET_OS_IPHONE
+- (void) appBackgrounding: (NSNotification*)n {
+    // Danger: This is called on the main thread!
+    MYOnThread(_thread, ^{
+        LogTo(Sync, @"%@: App going into background", self);
+        [self stop];
+    });
+}
+#endif
 
 
 - (void) asyncTaskStarted {
@@ -299,8 +354,19 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 }
 
 
+- (void) addRevsToInbox: (TDRevisionList*)revs {
+    Assert(_running);
+    LogTo(SyncVerbose, @"%@: Received %llu revs", self, (UInt64)revs.count);
+    [_batcher queueObjects: revs.allRevisions];
+    [self updateActive];
+}
+
+
 - (void) processInbox: (NSArray*)inbox {
 }
+
+
+#pragma mark - HTTP REQUESTS:
 
 
 - (TDRemoteJSONRequest*) sendAsyncRequest: (NSString*)method
@@ -311,11 +377,51 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     LogTo(SyncVerbose, @"%@: %@ .%@", self, method, relativePath);
     NSString* urlStr = [_remote.absoluteString stringByAppendingString: relativePath];
     NSURL* url = [NSURL URLWithString: urlStr];
-    return [[[TDRemoteJSONRequest alloc] initWithMethod: method
-                                                    URL: url
-                                                   body: body
-                                             authorizer: _authorizer
-                                           onCompletion: onCompletion] autorelease];
+    onCompletion = [[onCompletion copy] autorelease];
+    __block TDRemoteJSONRequest *req = [[TDRemoteJSONRequest alloc] initWithMethod: method
+                                                                        URL: url
+                                                                       body: body
+                                                             requestHeaders: self.requestHeaders 
+                                                              onCompletion:
+                                ^(id result, NSError* error) {
+                                    [self removeRemoteRequest: req];
+                                    onCompletion(result, error);
+                                }];
+    req.authorizer = _authorizer;
+    [self addRemoteRequest: req];
+    [req start];
+    return [req autorelease];
+}
+
+
+- (void) addRemoteRequest: (TDRemoteRequest*)request {
+    if (!_remoteRequests)
+        _remoteRequests = [[NSMutableArray alloc] init];
+    [_remoteRequests addObject: request];
+}
+
+- (void) removeRemoteRequest: (TDRemoteRequest*)request {
+    [_remoteRequests removeObjectIdenticalTo: request];
+}
+
+
+- (void) stopRemoteRequests {
+    if (!_remoteRequests)
+        return;
+    LogTo(Sync, @"Stopping %u remote requests", (unsigned)_remoteRequests.count);
+    // Clear _remoteRequests before iterating, to ensure that re-entrant calls to this won't
+    // try to re-stop any of the requests. (Re-entrant calls are possible due to replicator
+    // error handling when it receives the 'canceled' errors from the requests I'm stopping.)
+    NSArray* requests = [_remoteRequests autorelease];
+    _remoteRequests = nil;
+    [requests makeObjectsPerformSelector: @selector(stop)];
+}
+
+
+- (NSArray*) activeRequestsStatus {
+    return [_remoteRequests my_map: ^id(TDRemoteRequest* request) {
+        return request.statusInfo;
+    }];
 }
 
 
@@ -328,22 +434,27 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
 
 
 /** This is the _local document ID stored on the remote server to keep track of state.
-    Its ID is based on the local database ID (the private one, to make the result unguessable)
-    and the remote database's URL. */
+    It's based on the local database UUID (the private one, to make the result unguessable),
+    the remote database's URL, and the filter name and parameters (if any). */
 - (NSString*) remoteCheckpointDocID {
-    NSString* input = $sprintf(@"%@\n%@\n%i", _db.privateUUID, _remote.absoluteString, self.isPush);
-    return TDHexSHA1Digest([input dataUsingEncoding: NSUTF8StringEncoding]);
+    NSMutableDictionary* spec = $mdict({@"localUUID", _db.privateUUID},
+                                       {@"remoteURL", _remote.absoluteString},
+                                       {@"push", @(self.isPush)},
+                                       {@"filter", _filterName},
+                                       {@"filterParams", _filterParameters});
+    return TDHexSHA1Digest([TDCanonicalJSON canonicalData: spec]);
 }
 
 
 - (void) fetchRemoteCheckpointDoc {
     _lastSequenceChanged = NO;
-    NSString* localLastSequence = [_db lastSequenceWithRemoteURL: _remote push: self.isPush];
+    NSString* checkpointID = self.remoteCheckpointDocID;
+    NSString* localLastSequence = [_db lastSequenceWithCheckpointID: checkpointID];
     
     [self asyncTaskStarted];
     TDRemoteJSONRequest* request = 
         [self sendAsyncRequest: @"GET"
-                          path: [@"/_local/" stringByAppendingString: self.remoteCheckpointDocID]
+                          path: [@"/_local/" stringByAppendingString: checkpointID]
                           body: nil
                   onCompletion: ^(id response, NSError* error) {
                   // Got the response:
@@ -355,7 +466,7 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
                       response = $castIf(NSDictionary, response);
                       self.remoteCheckpoint = response;
                       NSString* remoteLastSequence = $castIf(NSString,
-                                                        [response objectForKey: @"lastSequence"]);
+                                                        response[@"lastSequence"]);
 
                       if ($equal(remoteLastSequence, localLastSequence)) {
                           _lastSequence = [localLastSequence retain];
@@ -371,6 +482,11 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
      ];
     [request dontLog404];
 }
+
+
+#if DEBUG
+@synthesize savingCheckpoint=_savingCheckpoint;  // for unit tests
+#endif
 
 
 - (void) saveLastSequence {
@@ -391,8 +507,9 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
     [body setValue: _lastSequence forKey: @"lastSequence"];
     
     _savingCheckpoint = YES;
+    NSString* checkpointID = self.remoteCheckpointDocID;
     [self sendAsyncRequest: @"PUT"
-                      path: [@"/_local/" stringByAppendingString: self.remoteCheckpointDocID]
+                      path: [@"/_local/" stringByAppendingString: checkpointID]
                       body: body
               onCompletion: ^(id response, NSError* error) {
                   _savingCheckpoint = NO;
@@ -402,50 +519,17 @@ NSString* TDReplicatorStoppedNotification = @"TDReplicatorStopped";
                       Warn(@"%@: Unable to save remote checkpoint: %@", self, error);
                       // TODO: If error is 401 or 403, and this is a pull, remember that remote is read-only and don't attempt to read its checkpoint next time.
                   } else {
-                      id rev = [response objectForKey: @"rev"];
+                      id rev = response[@"rev"];
                       if (rev)
-                          [body setObject: rev forKey: @"_rev"];
+                          body[@"_rev"] = rev;
                       self.remoteCheckpoint = body;
+                      [_db setLastSequence: _lastSequence withCheckpointID: checkpointID];
                   }
                   if (_overdueForSave)
                       [self saveLastSequence];      // start a save that was waiting on me
               }
      ];
-    [_db setLastSequence: _lastSequence withRemoteURL: _remote push: self.isPush];
 }
 
-
-@end
-
-
-
-
-@implementation TDBasicAuthorizer
-
-- (id) initWithCredential: (NSURLCredential*)credential {
-    Assert(credential);
-    self = [super init];
-    if (self) {
-        _credential = [credential retain];
-    }
-    return self;
-}
-
-- (void)dealloc
-{
-    [_credential release];
-    [super dealloc];
-}
-
-- (NSString*) authorizeURLRequest: (NSMutableURLRequest*)request {
-    NSString* username = _credential.user;
-    NSString* password = _credential.password;
-    if (username && password) {
-        NSString* seekrit = $sprintf(@"%@:%@", username, password);
-        seekrit = [TDBase64 encode: [seekrit dataUsingEncoding: NSUTF8StringEncoding]];
-        return [@"Basic " stringByAppendingString: seekrit];
-    }
-    return nil;
-}
 
 @end
