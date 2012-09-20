@@ -1200,28 +1200,28 @@
 			isa = PBXGroup;
 			children = (
 				27C7066F1488634300F0F099 /* AppKit.framework */,
-				27F0745C11CD50A600E9A2AB /* Foundation.framework */,
+				27E7FAEF155D8EBA0025F93A /* CFNetwork.framework */,
 				27C70697148864BA00F0F099 /* Cocoa.framework */,
-				27F0744911CD4BA000E9A2AB /* libsqlite3.dylib */,
-				270B3DFC1489359000E0A926 /* SenTestingKit.framework */,
-				27B0B7B81492B83C00A817AD /* UIKit.framework */,
 				27B0B7E81492BB6B00A817AD /* CoreFoundation.framework */,
 				27B0B80F1492C16300A817AD /* CoreGraphics.framework */,
-				27C70699148864BA00F0F099 /* Other Frameworks */,
+				275315F714ACF2500065964D /* CoreServices.framework */,
+				27F0745C11CD50A600E9A2AB /* Foundation.framework */,
+				27B0B7F61492BC7A00A817AD /* Foundation.framework */,
+				27F0744911CD4BA000E9A2AB /* libsqlite3.dylib */,
 				27B0B7F81492BC8000A817AD /* libsqlite3.dylib */,
 				27DB90DC14DB250500FC7118 /* libz.dylib */,
 				27DB90DE14DB4B0100FC7118 /* libz.dylib */,
-				27B0B7F61492BC7A00A817AD /* Foundation.framework */,
-				275315F714ACF2500065964D /* CoreServices.framework */,
-				275315F414ACF1CC0065964D /* Security.framework */,
 				DA147C3A14BCAC780052DA4D /* MobileCoreServices.framework */,
+				27C70699148864BA00F0F099 /* Other Frameworks */,
 				DA147C3B14BCAC780052DA4D /* Security.framework */,
-				275315F714ACF2500065964D /* CoreServices.framework */,
 				275315F414ACF1CC0065964D /* Security.framework */,
+				27E7FB02155DBDA20025F93A /* Security.framework */,
+				270B3DFC1489359000E0A926 /* SenTestingKit.framework */,
 				27103F8714EA076600DF7209 /* SystemConfiguration.framework */,
 				27E00C8D14EC2C74004BCBA9 /* SystemConfiguration.framework */,
-				27E7FAEF155D8EBA0025F93A /* CFNetwork.framework */,
-				27E7FB02155DBDA20025F93A /* Security.framework */,
+				27B0B7B81492B83C00A817AD /* UIKit.framework */,
+				275315F714ACF2500065964D /* CoreServices.framework */,
+				275315F414ACF1CC0065964D /* Security.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1577,7 +1577,6 @@
 			buildPhases = (
 				27B0B7A51492B83B00A817AD /* Sources */,
 				27B0B7A61492B83B00A817AD /* Frameworks */,
-				27B0B7E21492BA5900A817AD /* Build Fat Library */,
 			);
 			buildRules = (
 			);
@@ -1842,22 +1841,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
-		};
-		27B0B7E21492BA5900A817AD /* Build Fat Library */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/Source/BuildFatLibrary.sh",
-			);
-			name = "Build Fat Library";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "source \"$SCRIPT_INPUT_FILE_0\"";
-			showEnvVarsInLog = 0;
 		};
 		27B0B8061492BE2100A817AD /* Copy Library */ = {
 			isa = PBXShellScriptBuildPhase;
