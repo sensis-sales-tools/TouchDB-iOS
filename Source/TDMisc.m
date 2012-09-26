@@ -111,7 +111,7 @@ NSString* TDEscapeID( NSString* docOrRevID ) {
 #else
     CFStringRef escaped = CFURLCreateStringByAddingPercentEscapes(NULL,
                                                                   (CFStringRef)docOrRevID,
-                                                                  NULL, (CFStringRef)@"&/",
+                                                                  NULL, NULL, //(CFStringRef)@"&/",
                                                                   kCFStringEncodingUTF8);
     return [NSMakeCollectable(escaped) autorelease];
 #endif
