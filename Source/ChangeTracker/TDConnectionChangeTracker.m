@@ -267,6 +267,7 @@ static SecTrustRef CopyTrustWithPolicy(SecTrustRef trust, SecPolicyRef policy) {
         CFArrayAppendValue(certs, SecTrustGetCertificateAtIndex(trust, i));
     OSStatus err = SecTrustCreateWithCertificates(certs, policy, &trust);
     CAssertEq(err, noErr);
+	CFRelease(certs);
     return trust;
 #else
     SecTrustSetPolicies(trust, policy);

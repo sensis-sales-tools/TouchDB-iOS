@@ -120,10 +120,13 @@
         }
         
         // Now run:
-        while (!_stopRunLoop && [[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode
-                                                         beforeDate: [NSDate distantFuture]])
-            ;
-        
+		 while (!_stopRunLoop) {
+			 @autoreleasepool {
+				 [[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode beforeDate: [NSDate distantFuture]];
+				 NSLog(@"RUN LOOP FIRED!!!");
+			 }
+		  }
+       
         LogTo(TDServer, @"Server thread exiting");
 
         // Clean up; this has to be done on the server thread, not in the -close method.
