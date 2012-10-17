@@ -123,7 +123,6 @@
 		 while (!_stopRunLoop) {
 			 @autoreleasepool {
 				 [[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode beforeDate: [NSDate distantFuture]];
-				 NSLog(@"RUN LOOP FIRED!!!");
 			 }
 		  }
        
