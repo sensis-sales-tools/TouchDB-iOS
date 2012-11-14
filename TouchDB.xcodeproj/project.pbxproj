@@ -28,6 +28,49 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		0BE00037165459B200B278C6 /* TD_Database.h in Headers */ = {isa = PBXBuildFile; fileRef = 27F0744611CD4B6D00E9A2AB /* TD_Database.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00038165459B200B278C6 /* TD_Database+Attachments.h in Headers */ = {isa = PBXBuildFile; fileRef = 2711CDFC14C7590A00505D55 /* TD_Database+Attachments.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00039165459B200B278C6 /* TD_Database+Insertion.h in Headers */ = {isa = PBXBuildFile; fileRef = 2711CDFF14C7595900505D55 /* TD_Database+Insertion.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0003A165459B200B278C6 /* TD_Database+Replication.h in Headers */ = {isa = PBXBuildFile; fileRef = 2711CE0214C759BD00505D55 /* TD_Database+Replication.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0003B165459B200B278C6 /* TD_Database+LocalDocs.h in Headers */ = {isa = PBXBuildFile; fileRef = 2773ADC514BD1EB80027A292 /* TD_Database+LocalDocs.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0003C165459B200B278C6 /* TD_DatabaseManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 2751D4E2151BAE7000F7FD57 /* TD_DatabaseManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0003D165459B200B278C6 /* TD_View.h in Headers */ = {isa = PBXBuildFile; fileRef = 279EB2CC149140DE00E74185 /* TD_View.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0003E165459B200B278C6 /* TD_Body.h in Headers */ = {isa = PBXBuildFile; fileRef = 27F074A911CD5D7A00E9A2AB /* TD_Body.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0003F165459B200B278C6 /* TD_Revision.h in Headers */ = {isa = PBXBuildFile; fileRef = 270B3E3714898DF200E0A926 /* TD_Revision.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00040165459B200B278C6 /* TD_Attachment.h in Headers */ = {isa = PBXBuildFile; fileRef = 27A7209E152B959100C0A0E8 /* TD_Attachment.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00041165459B200B278C6 /* TD_Server.h in Headers */ = {isa = PBXBuildFile; fileRef = 27C706401486BBD500F0F099 /* TD_Server.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00042165459B200B278C6 /* TDBlobStore.h in Headers */ = {isa = PBXBuildFile; fileRef = 27731EFD1493FA3100815D67 /* TDBlobStore.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00043165459B200B278C6 /* TDRouter.h in Headers */ = {isa = PBXBuildFile; fileRef = 27C706431486BE7100F0F099 /* TDRouter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00044165459B200B278C6 /* TDURLProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 27C706461487584300F0F099 /* TDURLProtocol.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00045165459B200B278C6 /* TDReplicator.h in Headers */ = {isa = PBXBuildFile; fileRef = 27821BB5148E7D6F0099B373 /* TDReplicator.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00046165459B200B278C6 /* TDPuller.h in Headers */ = {isa = PBXBuildFile; fileRef = 270B3E291489581E00E0A926 /* TDPuller.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00047165459B200B278C6 /* TDPusher.h in Headers */ = {isa = PBXBuildFile; fileRef = 270B3E3C148D7F0000E0A926 /* TDPusher.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00048165459B200B278C6 /* TDMultipartDocumentReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 27ADC077152502EE001ABC1D /* TDMultipartDocumentReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00049165459B200B278C6 /* TDMultipartDownloader.h in Headers */ = {isa = PBXBuildFile; fileRef = 279CE40814D8AA23009F3FA6 /* TDMultipartDownloader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0004A165459B200B278C6 /* TDMultipartUploader.h in Headers */ = {isa = PBXBuildFile; fileRef = 27C5305214DF3A050078F886 /* TDMultipartUploader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0004B165459B200B278C6 /* TDReplicatorManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 27C40C7714EC58BC00994283 /* TDReplicatorManager.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0004C165459B200B278C6 /* TDChangeTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 27B0B790149290AB00A817AD /* TDChangeTracker.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0004D165459B200B278C6 /* TDConnectionChangeTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 27B0B792149290AB00A817AD /* TDConnectionChangeTracker.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0004E165459B200B278C6 /* TDSocketChangeTracker.h in Headers */ = {isa = PBXBuildFile; fileRef = 27ED9AA0163B01D5000C844A /* TDSocketChangeTracker.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0004F165459B200B278C6 /* TDRemoteRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 279906E1149A65B7003D4338 /* TDRemoteRequest.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00050165459B200B278C6 /* TDMultipartReader.h in Headers */ = {isa = PBXBuildFile; fileRef = 279CE3FE14D749A7009F3FA6 /* TDMultipartReader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00051165459B200B278C6 /* TDMultiStreamWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = 2766EFFB14DC7B37009ECCA8 /* TDMultiStreamWriter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00052165459B200B278C6 /* TDMultipartWriter.h in Headers */ = {isa = PBXBuildFile; fileRef = 2766EFF614DB7F9F009ECCA8 /* TDMultipartWriter.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00053165459B200B278C6 /* TDReachability.h in Headers */ = {isa = PBXBuildFile; fileRef = 27103F8114E9CE4400DF7209 /* TDReachability.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00054165459B200B278C6 /* TDStatus.h in Headers */ = {isa = PBXBuildFile; fileRef = 274F9807152E6E0C00247C46 /* TDStatus.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00055165459B200B278C6 /* TDInternal.h in Headers */ = {isa = PBXBuildFile; fileRef = 279EB2D01491442500E74185 /* TDInternal.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00056165459B200B278C6 /* TDJSON.h in Headers */ = {isa = PBXBuildFile; fileRef = 272B85121523691700A90CB2 /* TDJSON.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00057165459B200B278C6 /* TDCanonicalJSON.h in Headers */ = {isa = PBXBuildFile; fileRef = 278B0C9E152A8B1900577747 /* TDCanonicalJSON.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00058165459B200B278C6 /* TDBase64.h in Headers */ = {isa = PBXBuildFile; fileRef = 27B0B79C1492932700A817AD /* TDBase64.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00059165459B200B278C6 /* TDCollateJSON.h in Headers */ = {isa = PBXBuildFile; fileRef = 279EB2D91491C34300E74185 /* TDCollateJSON.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0005A165459B200B278C6 /* TDBatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 279906EC149ABFC1003D4338 /* TDBatcher.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0005B165459B200B278C6 /* TDAuthorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 270F5703156AE0BF000FEB8F /* TDAuthorizer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0005C165459B200B278C6 /* TDOAuth1Authorizer.h in Headers */ = {isa = PBXBuildFile; fileRef = 27F128AF156AC1C8008465C2 /* TDOAuth1Authorizer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0005D165459B200B278C6 /* TDSequenceMap.h in Headers */ = {isa = PBXBuildFile; fileRef = 279C7E2C14F424090004A1E8 /* TDSequenceMap.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0005E165459B200B278C6 /* TDMisc.h in Headers */ = {isa = PBXBuildFile; fileRef = 27A073EA14C0BB6200F52FE7 /* TDMisc.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE0005F165459B200B278C6 /* TouchDB.h in Headers */ = {isa = PBXBuildFile; fileRef = 270B3E1F148938D800E0A926 /* TouchDB.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00060165459B200B278C6 /* TouchDBPrefix.h in Headers */ = {isa = PBXBuildFile; fileRef = 27821BBD14906FB50099B373 /* TouchDBPrefix.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		0BE00061165459B200B278C6 /* TDGNUstep.h in Headers */ = {isa = PBXBuildFile; fileRef = 27F87BE61558890600F0A416 /* TDGNUstep.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2700BC5114B3864B00B5B297 /* HTTPFileResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 2753156914ACEFC90065964D /* HTTPFileResponse.m */; };
 		2700BC5E14B64AA600B5B297 /* TDRouter+Handlers.m in Sources */ = {isa = PBXBuildFile; fileRef = 2700BC5B14B64AA600B5B297 /* TDRouter+Handlers.m */; };
 		2700BC5F14B64AA600B5B297 /* TDRouter+Handlers.m in Sources */ = {isa = PBXBuildFile; fileRef = 2700BC5B14B64AA600B5B297 /* TDRouter+Handlers.m */; };
@@ -1436,6 +1479,56 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		0BE000351654597500B278C6 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0BE00037165459B200B278C6 /* TD_Database.h in Headers */,
+				0BE00038165459B200B278C6 /* TD_Database+Attachments.h in Headers */,
+				0BE00039165459B200B278C6 /* TD_Database+Insertion.h in Headers */,
+				0BE0003A165459B200B278C6 /* TD_Database+Replication.h in Headers */,
+				0BE0003B165459B200B278C6 /* TD_Database+LocalDocs.h in Headers */,
+				0BE0003C165459B200B278C6 /* TD_DatabaseManager.h in Headers */,
+				0BE0003D165459B200B278C6 /* TD_View.h in Headers */,
+				0BE0003E165459B200B278C6 /* TD_Body.h in Headers */,
+				0BE0003F165459B200B278C6 /* TD_Revision.h in Headers */,
+				0BE00040165459B200B278C6 /* TD_Attachment.h in Headers */,
+				0BE00041165459B200B278C6 /* TD_Server.h in Headers */,
+				0BE00042165459B200B278C6 /* TDBlobStore.h in Headers */,
+				0BE00043165459B200B278C6 /* TDRouter.h in Headers */,
+				0BE00044165459B200B278C6 /* TDURLProtocol.h in Headers */,
+				0BE00045165459B200B278C6 /* TDReplicator.h in Headers */,
+				0BE00046165459B200B278C6 /* TDPuller.h in Headers */,
+				0BE00047165459B200B278C6 /* TDPusher.h in Headers */,
+				0BE00048165459B200B278C6 /* TDMultipartDocumentReader.h in Headers */,
+				0BE00049165459B200B278C6 /* TDMultipartDownloader.h in Headers */,
+				0BE0004A165459B200B278C6 /* TDMultipartUploader.h in Headers */,
+				0BE0004B165459B200B278C6 /* TDReplicatorManager.h in Headers */,
+				0BE0004C165459B200B278C6 /* TDChangeTracker.h in Headers */,
+				0BE0004D165459B200B278C6 /* TDConnectionChangeTracker.h in Headers */,
+				0BE0004E165459B200B278C6 /* TDSocketChangeTracker.h in Headers */,
+				0BE0004F165459B200B278C6 /* TDRemoteRequest.h in Headers */,
+				0BE00050165459B200B278C6 /* TDMultipartReader.h in Headers */,
+				0BE00051165459B200B278C6 /* TDMultiStreamWriter.h in Headers */,
+				0BE00052165459B200B278C6 /* TDMultipartWriter.h in Headers */,
+				0BE00053165459B200B278C6 /* TDReachability.h in Headers */,
+				0BE00054165459B200B278C6 /* TDStatus.h in Headers */,
+				0BE00055165459B200B278C6 /* TDInternal.h in Headers */,
+				0BE00056165459B200B278C6 /* TDJSON.h in Headers */,
+				0BE00057165459B200B278C6 /* TDCanonicalJSON.h in Headers */,
+				0BE00058165459B200B278C6 /* TDBase64.h in Headers */,
+				0BE00059165459B200B278C6 /* TDCollateJSON.h in Headers */,
+				0BE0005A165459B200B278C6 /* TDBatcher.h in Headers */,
+				0BE0005B165459B200B278C6 /* TDAuthorizer.h in Headers */,
+				0BE0005C165459B200B278C6 /* TDOAuth1Authorizer.h in Headers */,
+				0BE0005D165459B200B278C6 /* TDSequenceMap.h in Headers */,
+				0BE0005E165459B200B278C6 /* TDMisc.h in Headers */,
+				0BE0005F165459B200B278C6 /* TouchDB.h in Headers */,
+				0BE00060165459B200B278C6 /* TouchDBPrefix.h in Headers */,
+				0BE00061165459B200B278C6 /* TDGNUstep.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		270B3DE71489359000E0A926 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -1659,6 +1752,7 @@
 				27B0B7A51492B83B00A817AD /* Sources */,
 				27B0B7A61492B83B00A817AD /* Frameworks */,
 				27B0B7E21492BA5900A817AD /* Build Fat Library */,
+				0BE000351654597500B278C6 /* Headers */,
 			);
 			buildRules = (
 			);
@@ -2760,6 +2854,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = TouchDB;
+				PUBLIC_HEADERS_FOLDER_PATH = include/$PROJECT_NAME;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 			};
@@ -2779,6 +2874,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = TouchDB;
+				PUBLIC_HEADERS_FOLDER_PATH = include/$PROJECT_NAME;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				VALIDATE_PRODUCT = YES;
