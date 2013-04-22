@@ -135,6 +135,7 @@
 - (void) respondWithResult: (id)result error: (NSError*)error {
     Assert(result || error);
     _onCompletion(result, error);
+	_onCompletion = nil;  // break cycles
 }
 
 

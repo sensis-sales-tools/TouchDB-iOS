@@ -309,11 +309,11 @@ static int findCommonAncestor(TD_Revision* rev, NSArray* possibleIDs);
 
     NSString* path = $sprintf(@"/%@?new_edits=false", TDEscapeID(rev.docID));
     NSString* urlStr = [_remote.absoluteString stringByAppendingString: path];
-    __block TDMultipartUploader* uploader = [[TDMultipartUploader alloc]
+    TDMultipartUploader* uploader = [[TDMultipartUploader alloc]
                                   initWithURL: [NSURL URLWithString: urlStr]
                                      streamer: bodyStream
                                requestHeaders: self.requestHeaders
-                                 onCompletion: ^(id response, NSError *error) {
+                                 onCompletion: ^(TDMultipartUploader* uploader, NSError *error) {
                   if (error) {
                       if ($equal(error.domain, TDHTTPErrorDomain)
                                 && error.code == kTDStatusUnsupportedType) {
@@ -325,7 +325,7 @@ static int findCommonAncestor(TD_Revision* rev, NSArray* possibleIDs);
                           [self revisionFailed];
                       }
                   } else {
-                      LogTo(SyncVerbose, @"%@: Sent %@, response=%@", self, rev, response);
+                      LogTo(SyncVerbose, @"%@: Sent multipart %@", self, rev);
                       self.lastSequence = $sprintf(@"%lld", rev.sequence);
                   }
                   self.changesProcessed++;
