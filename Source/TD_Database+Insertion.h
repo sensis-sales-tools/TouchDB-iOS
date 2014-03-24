@@ -6,7 +6,8 @@
 //  Copyright (c) 2012 Couchbase, Inc. All rights reserved.
 //
 
-#import <TouchDB/TD_Database.h>
+//#import <TouchDB/TD_Database.h> RQ
+#import <TD_Database.h>
 @protocol TD_ValidationContext;
 
 

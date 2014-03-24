@@ -7,8 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <TouchDB/TD_Database.h>
-
+//#import <TouchDB/TD_Database.h>  RQ
+#import <TD_Database.h>
 
 typedef void (^TDMapEmitBlock)(id key, id value);
 
